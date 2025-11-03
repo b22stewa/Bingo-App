@@ -1,0 +1,97 @@
+.game-room-header {
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  margin-bottom: 30px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.no-card {
+  background: white;
+  padding: 40px;
+  border-radius: 8px;
+  text-align: center;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.bingo-card-container {
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.bingo-card {
+  max-width: 500px;
+  margin: 20px auto;
+  border: 2px solid #333;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.bingo-header {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  background-color: #007bff;
+  color: white;
+}
+
+.bingo-letter {
+  padding: 15px;
+  text-align: center;
+  font-weight: bold;
+  font-size: 20px;
+  border-right: 1px solid rgba(255,255,255,0.3);
+}
+
+.bingo-letter:last-child {
+  border-right: none;
+}
+
+.bingo-row {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+}
+
+.bingo-cell {
+  padding: 20px;
+  text-align: center;
+  border-right: 1px solid #ddd;
+  border-bottom: 1px solid #ddd;
+  font-size: 18px;
+  font-weight: bold;
+  min-height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: white;
+}
+
+.bingo-row:last-child .bingo-cell {
+  border-bottom: none;
+}
+
+.bingo-row .bingo-cell:last-child {
+  border-right: none;
+}
+
+.bingo-cell.free-space {
+  background-color: #ffc107;
+  color: #333;
+  font-size: 14px;
+}
+
+.bingo-cell.marked {
+  background-color: #28a745;
+  color: white;
+}
+
+.bingo-cell.clickable {
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.bingo-cell.clickable:hover {
+  background-color: #e0e0e0;
+}
+
