@@ -8,7 +8,8 @@ router.use(authenticateToken);
 
 router.post('/generate', cardController.generateCard);
 router.get('/game/:game_id', cardController.getCards);
-router.post('/:card_id/mark', cardController.markNumber);
+router.put('/:card_id/goal', cardController.updateGoal); // Update goal text
+router.post('/:card_id/mark', cardController.markGoal); // Mark/unmark goal as complete
 
 module.exports = router;
 

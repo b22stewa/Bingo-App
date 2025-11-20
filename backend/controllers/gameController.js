@@ -3,18 +3,19 @@ const Card = require('../models/Card');
 
 exports.createGame = async (req, res, next) => {
   try {
-    const { room_name, max_players } = req.body;
+    const { room_name, description, max_players } = req.body;
     const created_by = req.user.userId;
 
     const gameId = await Game.create({
       created_by,
-      room_name: room_name || `Game ${Date.now()}`,
-      max_players,
-      status: 'waiting'
+      room_name: room_name || `Goal Card ${Date.now()}`,
+      description: description || '',
+      max_players: max_players || 1,
+      status: 'active'
     });
 
     const game = await Game.findById(gameId);
-    res.status(201).json({ message: 'Game created successfully', game });
+    res.status(201).json({ message: 'Goal card created successfully', game });
   } catch (error) {
     next(error);
   }
@@ -60,7 +61,7 @@ exports.updateGame = async (req, res, next) => {
   }
 };
 
-exports.startGame = async (req, res, next) => {
+exports.completeGame = async (req, res, next) => {
   try {
     const { id } = req.params;
     const game = await Game.findById(id);
@@ -70,11 +71,11 @@ exports.startGame = async (req, res, next) => {
     }
 
     if (game.created_by !== req.user.userId) {
-      return res.status(403).json({ message: 'Only game creator can start the game' });
+      return res.status(403).json({ message: 'Only card creator can mark it as complete' });
     }
 
-    const updatedGame = await Game.update(id, { status: 'active', started_at: new Date() });
-    res.json({ message: 'Game started', game: updatedGame });
+    const updatedGame = await Game.update(id, { status: 'completed', finished_at: new Date() });
+    res.json({ message: 'Goal card marked as completed', game: updatedGame });
   } catch (error) {
     next(error);
   }

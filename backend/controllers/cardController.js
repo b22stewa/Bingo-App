@@ -2,39 +2,22 @@ const Card = require('../models/Card');
 const Game = require('../models/Game');
 const db = require('../config/database').promisePool;
 
-// Generate a random bingo card (5x5 grid with numbers 1-75)
-const generateBingoCard = () => {
+// Generate an empty goal card (5x5 grid with empty strings for goals)
+const generateGoalCard = () => {
   const card = [];
-  const usedNumbers = new Set();
   
-  // B: 1-15, I: 16-30, N: 31-45, G: 46-60, O: 61-75
-  const ranges = [
-    { min: 1, max: 15 },   // B
-    { min: 16, max: 30 },  // I
-    { min: 31, max: 45 },  // N
-    { min: 46, max: 60 },  // G
-    { min: 61, max: 75 }   // O
-  ];
-
-  for (let col = 0; col < 5; col++) {
-    const row = [];
-    const range = ranges[col];
-    
-    for (let i = 0; i < 5; i++) {
-      let num;
-      do {
-        num = Math.floor(Math.random() * (range.max - range.min + 1)) + range.min;
-      } while (usedNumbers.has(num));
-      
-      usedNumbers.add(num);
-      row.push(num);
+  for (let row = 0; row < 5; row++) {
+    const cardRow = [];
+    for (let col = 0; col < 5; col++) {
+      // Center cell is free space
+      if (row === 2 && col === 2) {
+        cardRow.push('FREE');
+      } else {
+        cardRow.push(''); // Empty string - user will fill in their goals
+      }
     }
-    
-    card.push(row);
+    card.push(cardRow);
   }
-
-  // Free space in center (N column, middle row)
-  card[2][2] = 0; // 0 represents free space
 
   return card;
 };
@@ -50,8 +33,8 @@ exports.generateCard = async (req, res, next) => {
       return res.status(404).json({ message: 'Game not found' });
     }
 
-    if (game.status === 'finished') {
-      return res.status(400).json({ message: 'Cannot join finished game' });
+    if (game.status === 'completed') {
+      return res.status(400).json({ message: 'Cannot create card for completed game' });
     }
 
     // Check if user already has a card for this game
@@ -60,21 +43,22 @@ exports.generateCard = async (req, res, next) => {
       return res.status(400).json({ message: 'User already has a card for this game' });
     }
 
-    // Generate bingo card
-    const numbers = generateBingoCard();
+    // Generate empty goal card
+    const goals = generateGoalCard();
     
     const cardId = await Card.create({
       game_id,
       user_id,
-      numbers
+      goals
     });
 
     const [card] = await Card.findByGameAndUser(game_id, user_id);
     res.status(201).json({ 
-      message: 'Bingo card generated successfully', 
+      message: 'Goal card created successfully', 
       card: {
         ...card,
-        numbers: JSON.parse(card.numbers)
+        goals: JSON.parse(card.goals),
+        marked_goals: card.marked_goals ? JSON.parse(card.marked_goals) : []
       }
     });
   } catch (error) {
@@ -91,8 +75,8 @@ exports.getCards = async (req, res, next) => {
     
     const formattedCards = cards.map(card => ({
       ...card,
-      numbers: JSON.parse(card.numbers),
-      marked_numbers: card.marked_numbers ? JSON.parse(card.marked_numbers) : []
+      goals: JSON.parse(card.goals),
+      marked_goals: card.marked_goals ? JSON.parse(card.marked_goals) : []
     }));
 
     res.json({ cards: formattedCards });
@@ -101,10 +85,54 @@ exports.getCards = async (req, res, next) => {
   }
 };
 
-exports.markNumber = async (req, res, next) => {
+exports.updateGoal = async (req, res, next) => {
   try {
     const { card_id } = req.params;
-    const { number } = req.body;
+    const { row, col, goal } = req.body;
+
+    // Get card
+    const [cards] = await db.execute(
+      'SELECT * FROM bingo_cards WHERE id = ?',
+      [card_id]
+    );
+    
+    if (!cards || cards.length === 0) {
+      return res.status(404).json({ message: 'Card not found' });
+    }
+
+    const card = cards[0];
+    if (card.user_id !== req.user.userId) {
+      return res.status(403).json({ message: 'Not authorized to edit this card' });
+    }
+
+    // Validate row and col
+    if (row < 0 || row >= 5 || col < 0 || col >= 5) {
+      return res.status(400).json({ message: 'Invalid cell position' });
+    }
+
+    // Update goal text
+    let goals = JSON.parse(card.goals);
+    goals[row][col] = goal || '';
+    
+    const updatedCard = await Card.updateGoals(card_id, goals);
+
+    res.json({
+      message: 'Goal updated successfully',
+      card: {
+        ...updatedCard,
+        goals: JSON.parse(updatedCard.goals),
+        marked_goals: updatedCard.marked_goals ? JSON.parse(updatedCard.marked_goals) : []
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.markGoal = async (req, res, next) => {
+  try {
+    const { card_id } = req.params;
+    const { row, col } = req.body;
 
     // Get card
     const [cards] = await db.execute(
@@ -121,20 +149,36 @@ exports.markNumber = async (req, res, next) => {
       return res.status(403).json({ message: 'Not authorized to mark this card' });
     }
 
-    // Update marked numbers
-    let markedNumbers = card.marked_numbers ? JSON.parse(card.marked_numbers) : [];
-    if (!markedNumbers.includes(number)) {
-      markedNumbers.push(number);
+    // Validate row and col
+    if (row < 0 || row >= 5 || col < 0 || col >= 5) {
+      return res.status(400).json({ message: 'Invalid cell position' });
     }
 
-    const updatedCard = await Card.updateMarkedNumbers(card_id, markedNumbers);
+    // Can't mark free space
+    if (row === 2 && col === 2) {
+      return res.status(400).json({ message: 'Cannot mark free space' });
+    }
+
+    // Update marked goals
+    let markedGoals = card.marked_goals ? JSON.parse(card.marked_goals) : [];
+    const goalKey = `${row},${col}`;
+    const goalIndex = markedGoals.findIndex(g => `${g[0]},${g[1]}` === goalKey);
+    
+    // Toggle: if already marked, unmark it; otherwise mark it
+    if (goalIndex >= 0) {
+      markedGoals.splice(goalIndex, 1);
+    } else {
+      markedGoals.push([row, col]);
+    }
+
+    const updatedCard = await Card.updateMarkedGoals(card_id, markedGoals);
 
     res.json({
-      message: 'Number marked successfully',
+      message: markedGoals.find(g => `${g[0]},${g[1]}` === goalKey) ? 'Goal marked as complete' : 'Goal unmarked',
       card: {
         ...updatedCard,
-        numbers: JSON.parse(updatedCard.numbers),
-        marked_numbers: JSON.parse(updatedCard.marked_numbers)
+        goals: JSON.parse(updatedCard.goals),
+        marked_goals: JSON.parse(updatedCard.marked_goals)
       }
     });
   } catch (error) {

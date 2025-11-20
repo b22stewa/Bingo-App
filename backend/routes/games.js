@@ -10,7 +10,7 @@ router.post('/', gameController.createGame);
 router.get('/', gameController.getGames);
 router.get('/:id', gameController.getGame);
 router.put('/:id', gameController.updateGame);
-router.post('/:id/start', gameController.startGame);
+router.post('/:id/complete', gameController.completeGame);
 
 module.exports = router;
 
