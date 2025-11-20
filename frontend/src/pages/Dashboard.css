@@ -52,3 +52,18 @@
   font-size: 14px;
 }
 
+.status-active {
+  color: #28a745;
+  font-weight: bold;
+}
+
+.status-completed {
+  color: #6c757d;
+  font-weight: bold;
+}
+
+.status-archived {
+  color: #999;
+  font-weight: bold;
+}
+

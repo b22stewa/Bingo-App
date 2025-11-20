@@ -9,7 +9,7 @@ const Home = () => {
   return (
     <div className="home">
       <div className="home-hero">
-        <h1>Welcome to Bingo App</h1>
+        <h1>Welcome to Grant Thornton Bingo App</h1>
         <p>Join games, play bingo, and have fun!</p>
         {isAuthenticated ? (
           <Link to="/dashboard" className="btn btn-primary">

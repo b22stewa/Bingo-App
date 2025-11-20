@@ -54,41 +54,41 @@ const Dashboard = () => {
 
   return (
     <div className="container">
-      <h1>Game Dashboard</h1>
+      <h1>Goal Card Dashboard</h1>
       
       <div className="create-game-section">
-        <h2>Create New Game</h2>
+        <h2>Create New Goal Card</h2>
         <form onSubmit={handleCreateGame} className="create-game-form">
           <input
             type="text"
-            placeholder="Room name (optional)"
+            placeholder="Goal card name (e.g., 'Weekly Goals', 'Fitness Challenge')"
             value={roomName}
             onChange={(e) => setRoomName(e.target.value)}
             className="form-control"
           />
           <button type="submit" className="btn btn-primary" disabled={creating}>
-            {creating ? 'Creating...' : 'Create Game'}
+            {creating ? 'Creating...' : 'Create Goal Card'}
           </button>
         </form>
         {error && <div className="error-message">{error}</div>}
       </div>
 
       <div className="games-section">
-        <h2>Available Games</h2>
+        <h2>Your Goal Cards</h2>
         {games.length === 0 ? (
-          <p>No games available. Create one to get started!</p>
+          <p>No goal cards yet. Create one to start tracking your goals!</p>
         ) : (
           <div className="games-list">
             {games.map((game) => (
               <div key={game.id} className="game-card">
                 <h3>{game.room_name}</h3>
-                <p>Status: {game.status}</p>
+                <p>Status: <span className={`status-${game.status}`}>{game.status}</span></p>
                 <p>Created: {new Date(game.created_at).toLocaleString()}</p>
                 <button
                   onClick={() => handleJoinGame(game.id)}
                   className="btn btn-primary"
                 >
-                  Join Game
+                  Open Goal Card
                 </button>
               </div>
             ))}
