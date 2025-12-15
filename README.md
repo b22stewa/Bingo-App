@@ -46,12 +46,15 @@ Bingo App/
 
 ### Backend Setup
 Navigate to the backend directory:
+```
 cd backend
-
+```
 Install dependencies:
+```
 npm install
-
+```
 Create a `.env` file in the backend directory:
+```
 PORT=5000
 DB_HOST=localhost
 DB_USER=your_username
@@ -59,22 +62,27 @@ DB_PASSWORD=your_password
 DB_NAME=bingo_app
 JWT_SECRET=your_jwt_secret_key
 NODE_ENV=development
-
+```
 Run database migrations (see database/README.md)
 
 Start the server:
+```
 npm run dev
-
+```
 ### Frontend Setup
 Navigate to the frontend directory:
+```
 cd frontend
-
+```
 Install dependencies:
+```
 npm install
-
+```
 Create a `.env` file in the frontend directory:
+```
 REACT_APP_API_URL=http://localhost:5000/api
-
+```
 Start the development server:
+```
 npm start
-
+```
