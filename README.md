@@ -1,6 +1,6 @@
 # Bingo App
 
-A full-stack, in-progress multiplayer Bingo application designed for company events,
+A full-stack, in-progress multiplayer goal-setting Bingo application designed for company events,
 built to explore full-stack architecture, relational data modeling, and API-driven
 game logic.
 
