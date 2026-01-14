@@ -46,9 +46,26 @@ const GameRoom = () => {
 
     try {
       const response = await api.post('/cards/generate', { game_id: gameId });
-      setCard(response.data.card);
+      
+      if (response.data && response.data.card) {
+        setCard(response.data.card);
+      } else {
+        // If response doesn't have card, fetch it
+        await fetchCard();
+      }
     } catch (error) {
-      setError(error.response?.data?.message || 'Failed to create card');
+      console.error('Create card error:', error);
+      const errorMessage = error.response?.data?.message || 
+                          error.message || 
+                          'Failed to create card. Please try again.';
+      setError(errorMessage);
+      
+      // If error says user already has a card, refresh to show it
+      if (error.response?.data?.message?.includes('already has a card')) {
+        setTimeout(() => {
+          fetchCard();
+        }, 500);
+      }
     } finally {
       setGenerating(false);
     }
@@ -114,9 +131,11 @@ const GameRoom = () => {
     <div className="container">
       <div className="game-room-header">
         <h1>{game.room_name}</h1>
-        {game.description && <p className="game-description">{game.description}</p>}
+        {game.description && game.description !== '0' && game.description !== 0 && (
+          <p className="game-description">{game.description}</p>
+        )}
         <p>Status: <span className={`status-${game.status}`}>{game.status}</span></p>
-        {card && card.is_winner && (
+        {card && Boolean(card.is_winner) && (
           <div className="winner-banner">🎉 Bingo! You completed a row, column, or diagonal! 🎉</div>
         )}
       </div>

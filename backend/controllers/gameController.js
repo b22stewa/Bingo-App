@@ -9,14 +9,19 @@ exports.createGame = async (req, res, next) => {
     const gameId = await Game.create({
       created_by,
       room_name: room_name || `Goal Card ${Date.now()}`,
-      description: description || '',
+      description: description || null,
       max_players: max_players || 1,
       status: 'active'
     });
 
     const game = await Game.findById(gameId);
+    if (!game) {
+      return res.status(500).json({ message: 'Failed to retrieve created game' });
+    }
+    
     res.status(201).json({ message: 'Goal card created successfully', game });
   } catch (error) {
+    console.error('Error creating game:', error);
     next(error);
   }
 };
@@ -24,12 +29,27 @@ exports.createGame = async (req, res, next) => {
 exports.getGames = async (req, res, next) => {
   try {
     const { status } = req.query;
-    const games = status 
-      ? await Game.findByStatus(status)
-      : await Game.findAll();
+    const userId = req.user.userId;
     
-    res.json({ games });
+    if (!userId) {
+      return res.status(401).json({ message: 'User ID not found in token' });
+    }
+    
+    let games;
+    if (status) {
+      games = await Game.findByStatus(status);
+      // Filter by user if status is provided
+      // Convert both to numbers for comparison
+      games = games.filter(game => parseInt(game.created_by, 10) === parseInt(userId, 10));
+    } else {
+      games = await Game.findAll(userId);
+    }
+    
+    res.json({ games: games || [] });
   } catch (error) {
+    console.error('Error fetching games:', error);
+    console.error('User ID:', req.user.userId);
+    console.error('Error stack:', error.stack);
     next(error);
   }
 };

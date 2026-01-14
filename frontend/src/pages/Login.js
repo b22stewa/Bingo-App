@@ -13,12 +13,12 @@ const Login = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
     setLoading(true);
 
     const result = await login(email, password);
     
     if (result.success) {
+      setError('');
       navigate('/dashboard');
     } else {
       setError(result.message);

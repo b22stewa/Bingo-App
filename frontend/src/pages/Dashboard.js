@@ -7,6 +7,7 @@ const Dashboard = () => {
   const [games, setGames] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [fetchError, setFetchError] = useState('');
   const [roomName, setRoomName] = useState('');
   const [creating, setCreating] = useState(false);
   const navigate = useNavigate();
@@ -17,10 +18,20 @@ const Dashboard = () => {
 
   const fetchGames = async () => {
     try {
+      setFetchError(''); // Clear any previous errors
       const response = await api.get('/games');
-      setGames(response.data.games);
+      if (response.data && response.data.games) {
+        setGames(response.data.games);
+      } else {
+        setGames([]);
+      }
     } catch (error) {
-      setError('Failed to load games');
+      console.error('Error fetching games:', error);
+      const errorMessage = error.response?.data?.message || 
+                          error.message || 
+                          'Failed to load games';
+      setFetchError(errorMessage);
+      setGames([]); // Set empty array on error
     } finally {
       setLoading(false);
     }
@@ -35,9 +46,20 @@ const Dashboard = () => {
       const response = await api.post('/games', {
         room_name: roomName || `Game ${Date.now()}`
       });
-      navigate(`/game/${response.data.game.id}`);
+      
+      if (response.data && response.data.game && response.data.game.id) {
+        // Refresh the games list before navigating
+        await fetchGames();
+        navigate(`/game/${response.data.game.id}`);
+      } else {
+        setError('Invalid response from server');
+      }
     } catch (error) {
-      setError(error.response?.data?.message || 'Failed to create game');
+      console.error('Create game error:', error);
+      const errorMessage = error.response?.data?.message || 
+                          error.message || 
+                          'Failed to create game. Please check your connection and try again.';
+      setError(errorMessage);
     } finally {
       setCreating(false);
       setRoomName('');
@@ -75,7 +97,8 @@ const Dashboard = () => {
 
       <div className="games-section">
         <h2>Your Goal Cards</h2>
-        {games.length === 0 ? (
+        {fetchError && <div className="error-message">{fetchError}</div>}
+        {games.length === 0 && !fetchError ? (
           <p>No goal cards yet. Create one to start tracking your goals!</p>
         ) : (
           <div className="games-list">

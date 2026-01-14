@@ -1,4 +1,4 @@
-const db = require('../config/database').promisePool;
+const db = require('../config/database'); // pg Pool instance
 const bcrypt = require('bcryptjs');
 
 class User {
@@ -6,28 +6,28 @@ class User {
     const { username, email, password } = userData;
     const hashedPassword = await bcrypt.hash(password, 10);
     
-    const [result] = await db.execute(
-      'INSERT INTO users (username, email, password_hash) VALUES (?, ?, ?)',
+    const result = await db.query(
+      'INSERT INTO users (username, email, password_hash) VALUES ($1, $2, $3) RETURNING id',
       [username, email, hashedPassword]
     );
     
-    return result.insertId;
+    return result.rows[0].id;
   }
 
   static async findByEmail(email) {
-    const [rows] = await db.execute(
-      'SELECT * FROM users WHERE email = ?',
+    const result = await db.query(
+      'SELECT * FROM users WHERE email = $1',
       [email]
     );
-    return rows[0];
+    return result.rows[0];
   }
 
   static async findById(id) {
-    const [rows] = await db.execute(
-      'SELECT id, username, email, created_at FROM users WHERE id = ?',
+    const result = await db.query(
+      'SELECT id, username, email, created_at FROM users WHERE id = $1',
       [id]
     );
-    return rows[0];
+    return result.rows[0];
   }
 
   static async verifyPassword(plainPassword, hashedPassword) {

@@ -7,11 +7,19 @@ const api = axios.create({
   }
 });
 
-// Add token to requests if available
-const token = localStorage.getItem('token');
-if (token) {
-  api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-}
+// Request interceptor to add token dynamically
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
 
 // Response interceptor for handling errors
 api.interceptors.response.use(
@@ -22,6 +30,20 @@ api.interceptors.response.use(
       delete api.defaults.headers.common['Authorization'];
       window.location.href = '/login';
     }
+    
+    // Log error details for debugging
+    if (error.response) {
+      console.error('API Error:', {
+        status: error.response.status,
+        data: error.response.data,
+        headers: error.response.headers
+      });
+    } else if (error.request) {
+      console.error('No response received:', error.request);
+    } else {
+      console.error('Error setting up request:', error.message);
+    }
+    
     return Promise.reject(error);
   }
 );
