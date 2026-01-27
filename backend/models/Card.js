@@ -1,44 +1,44 @@
-const db = require('../config/database');
+const db = require('../config/database'); // MySQL pool (mysql2/promise)
 
 class Card {
   static async create(cardData) {
     const { game_id, user_id, goals } = cardData;
     
-    const result = await db.query(
-      'INSERT INTO bingo_cards (game_id, user_id, goals) VALUES ($1, $2, $3) RETURNING id',
+    const [result] = await db.query(
+      'INSERT INTO bingo_cards (game_id, user_id, goals) VALUES (?, ?, ?)',
       [game_id, user_id, JSON.stringify(goals)]
     );
     
-    return result.rows[0].id;
+    return result.insertId;
   }
 
   static async findByGameAndUser(gameId, userId) {
-    const result = await db.query(
-      'SELECT * FROM bingo_cards WHERE game_id = $1 AND user_id = $2',
+    const [rows] = await db.query(
+      'SELECT * FROM bingo_cards WHERE game_id = ? AND user_id = ?',
       [gameId, userId]
     );
-    return result.rows;
+    return rows;
   }
 
   static async findByGame(gameId) {
-    const result = await db.query(
-      'SELECT * FROM bingo_cards WHERE game_id = $1',
+    const [rows] = await db.query(
+      'SELECT * FROM bingo_cards WHERE game_id = ?',
       [gameId]
     );
-    return result.rows;
+    return rows;
   }
 
   static async updateGoals(cardId, goals) {
     await db.query(
-      'UPDATE bingo_cards SET goals = $1 WHERE id = $2',
+      'UPDATE bingo_cards SET goals = ? WHERE id = ?',
       [JSON.stringify(goals), cardId]
     );
     
-    const result = await db.query(
-      'SELECT * FROM bingo_cards WHERE id = $1',
+    const [rows] = await db.query(
+      'SELECT * FROM bingo_cards WHERE id = ?',
       [cardId]
     );
-    return result.rows[0];
+    return rows[0];
   }
 
   static async updateMarkedGoals(cardId, markedGoals) {
@@ -54,20 +54,20 @@ class Card {
       updateData.completed_at = new Date();
     }
     
-    const fields = Object.keys(updateData).map((key, index) => `${key} = $${index + 1}`).join(', ');
+    const fields = Object.keys(updateData).map((key) => `${key} = ?`).join(', ');
     const values = Object.values(updateData);
     values.push(cardId);
     
     await db.query(
-      `UPDATE bingo_cards SET ${fields} WHERE id = $${values.length}`,
+      `UPDATE bingo_cards SET ${fields} WHERE id = ?`,
       values
     );
     
-    const result = await db.query(
-      'SELECT * FROM bingo_cards WHERE id = $1',
+    const [rows] = await db.query(
+      'SELECT * FROM bingo_cards WHERE id = ?',
       [cardId]
     );
-    return result.rows[0];
+    return rows[0];
   }
 
   // Check if marked goals form a complete row, column, diagonal, or full card

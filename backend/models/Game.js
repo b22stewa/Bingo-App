@@ -1,23 +1,23 @@
-const db = require('../config/database');
+const db = require('../config/database'); // MySQL pool (mysql2/promise)
 
 class Game {
   static async create(gameData) {
     const { created_by, room_name, description, max_players, status } = gameData;
     
-    const result = await db.query(
-      'INSERT INTO games (created_by, room_name, description, max_players, status) VALUES ($1, $2, $3, $4, $5) RETURNING id',
+    const [result] = await db.query(
+      'INSERT INTO games (created_by, room_name, description, max_players, status) VALUES (?, ?, ?, ?, ?)',
       [created_by, room_name, description || null, max_players || 1, status || 'active']
     );
     
-    return result.rows[0].id;
+    return result.insertId;
   }
 
   static async findById(id) {
-    const result = await db.query(
-      'SELECT * FROM games WHERE id = $1',
+    const [rows] = await db.query(
+      'SELECT * FROM games WHERE id = ?',
       [id]
     );
-    return result.rows[0];
+    return rows[0];
   }
 
   static async findAll(userId = null, limit = 50) {
@@ -33,15 +33,15 @@ class Game {
         if (isNaN(userIdNum)) {
           throw new Error('Invalid user ID');
         }
-        query = 'SELECT * FROM games WHERE created_by = $1 ORDER BY created_at DESC LIMIT $2';
+        query = 'SELECT * FROM games WHERE created_by = ? ORDER BY created_at DESC LIMIT ?';
         params = [userIdNum, limitNum];
       } else {
-        query = 'SELECT * FROM games ORDER BY created_at DESC LIMIT $1';
+        query = 'SELECT * FROM games ORDER BY created_at DESC LIMIT ?';
         params = [limitNum];
       }
       
-      const result = await db.query(query, params);
-      return result.rows;
+      const [rows] = await db.query(query, params);
+      return rows;
     } catch (error) {
       console.error('Error in findAll:', error);
       console.error('UserId provided:', userId);
@@ -50,11 +50,11 @@ class Game {
   }
 
   static async findByStatus(status) {
-    const result = await db.query(
-      'SELECT * FROM games WHERE status = $1 ORDER BY created_at DESC',
+    const [rows] = await db.query(
+      'SELECT * FROM games WHERE status = ? ORDER BY created_at DESC',
       [status]
     );
-    return result.rows;
+    return rows;
   }
 
   static async update(id, updates) {
@@ -63,7 +63,7 @@ class Game {
     values.push(id);
 
     await db.query(
-      `UPDATE games SET ${fields} WHERE id = $${values.length}`,
+      `UPDATE games SET ${fields} WHERE id = ?`,
       values
     );
     

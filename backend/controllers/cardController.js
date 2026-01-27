@@ -1,6 +1,6 @@
 const Card = require('../models/Card');
 const Game = require('../models/Game');
-const db = require('../config/database'); // pg Pool instance
+const db = require('../config/database'); // MySQL pool (mysql2/promise)
 
 // Helper function to safely parse JSON (handles both string and object)
 // PostgreSQL JSON columns can return data as strings or already-parsed objects
@@ -108,16 +108,16 @@ exports.updateGoal = async (req, res, next) => {
     const { row, col, goal } = req.body;
 
     // Get card
-    const result = await db.query(
-      'SELECT * FROM bingo_cards WHERE id = $1',
+    const [rows] = await db.query(
+      'SELECT * FROM bingo_cards WHERE id = ?',
       [card_id]
     );
     
-    if (!result.rows || result.rows.length === 0) {
+    if (!rows || rows.length === 0) {
       return res.status(404).json({ message: 'Card not found' });
     }
 
-    const card = result.rows[0];
+    const card = rows[0];
     if (card.user_id !== req.user.userId) {
       return res.status(403).json({ message: 'Not authorized to edit this card' });
     }
@@ -157,16 +157,16 @@ exports.markGoal = async (req, res, next) => {
     const { row, col } = req.body;
 
     // Get card
-    const result = await db.query(
-      'SELECT * FROM bingo_cards WHERE id = $1',
+    const [rows] = await db.query(
+      'SELECT * FROM bingo_cards WHERE id = ?',
       [card_id]
     );
     
-    if (!result.rows || result.rows.length === 0) {
+    if (!rows || rows.length === 0) {
       return res.status(404).json({ message: 'Card not found' });
     }
 
-    const card = result.rows[0];
+    const card = rows[0];
     if (card.user_id !== req.user.userId) {
       return res.status(403).json({ message: 'Not authorized to mark this card' });
     }

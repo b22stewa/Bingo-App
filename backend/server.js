@@ -14,14 +14,15 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Test database connection
-db.query('SELECT NOW()', (err, res) => {
-  if (err) {
-    console.error('Database connection failed:', err);
-  } else {
+// Test database connection (MySQL - promise based)
+(async () => {
+  try {
+    await db.query('SELECT 1');
     console.log('Database connected successfully');
+  } catch (err) {
+    console.error('Database connection failed:', err);
   }
-});
+})();
 
 // Routes
 app.get('/', (req, res) => {
